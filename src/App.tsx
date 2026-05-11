@@ -33,6 +33,8 @@ import { User, Event, Registration, Media } from './types';
 import { generateEventDescription, generateEventPoster } from './services/geminiService';
 import ReactMarkdown from 'react-markdown';
 
+const API_BASE = import.meta.env.VITE_BACKEND_URL || '';
+
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [view, setView] = useState<'login' | 'dashboard' | 'events' | 'registrations' | 'students' | 'event-details'>('login');
@@ -77,18 +79,18 @@ export default function App() {
     setLoading(true);
     try {
       // Always fetch all events for background usage
-      const evRes = await fetch('/api/events');
+      const evRes = await fetch(`${API_BASE}/api/events`);
       const evData = await evRes.json();
       setEvents(evData);
 
       if (user?.role === 'student') {
-        const regRes = await fetch(`/api/registrations/user/${user.id}`);
+        const regRes = await fetch(`${API_BASE}/api/registrations/user/${user.id}`);
         const regData = await regRes.json();
         setMyEvents(regData);
       }
 
       if (user?.role === 'admin' && view === 'students') {
-        const allRegRes = await fetch('/api/registrations/all');
+        const allRegRes = await fetch(`${API_BASE}/api/registrations/all`);
         const allRegData = await allRegRes.json();
         setAllRegistrations(allRegData);
       }
@@ -103,7 +105,7 @@ export default function App() {
     e.preventDefault();
     setAuthError('');
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch(`${API_BASE}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -603,21 +605,21 @@ function EventDetails({ user, event, onBack }: { user: User, event: Event | null
 
   const fetchRegistrations = async () => {
     if (!event) return;
-    const res = await fetch(`/api/registrations/event/${event.id}`);
+    const res = await fetch(`${API_BASE}/api/registrations/event/${event.id}`);
     const data = await res.json();
     setRegistrations(data);
   };
 
   const fetchMedia = async () => {
     if (!event) return;
-    const res = await fetch(`/api/media/${event.id}`);
+    const res = await fetch(`${API_BASE}/api/media/${event.id}`);
     const data = await res.json();
     setMedia(data);
   };
 
   const checkRegistration = async () => {
     if (!event) return;
-    const res = await fetch(`/api/registrations/user/${user.id}`);
+    const res = await fetch(`${API_BASE}/api/registrations/user/${user.id}`);
     const data = await res.json();
     setIsRegistered(data.some((e: Event) => e.id === event.id));
   };
@@ -625,7 +627,7 @@ function EventDetails({ user, event, onBack }: { user: User, event: Event | null
   const handleSave = async () => {
     setLoading(true);
     const method = event ? 'PUT' : 'POST';
-    const url = event ? `/api/events/${event.id}` : '/api/events';
+    const url = event ? `${API_BASE}/api/events/${event.id}` : `${API_BASE}/api/events`;
     
     await fetch(url, {
       method,
@@ -639,7 +641,7 @@ function EventDetails({ user, event, onBack }: { user: User, event: Event | null
   const handleDelete = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/events/${event?.id}`, { method: 'DELETE' });
+      const res = await fetch(`${API_BASE}/api/events/${event?.id}`, { method: 'DELETE' });
       if (res.ok) {
         onBack();
       } else {
@@ -656,7 +658,7 @@ function EventDetails({ user, event, onBack }: { user: User, event: Event | null
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const res = await fetch('/api/registrations', {
+    const res = await fetch(`${API_BASE}/api/registrations`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
@@ -715,7 +717,7 @@ function EventDetails({ user, event, onBack }: { user: User, event: Event | null
     const reader = new FileReader();
     reader.onloadend = async () => {
       const base64 = reader.result as string;
-      await fetch('/api/media', {
+      await fetch(`${API_BASE}/api/media`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

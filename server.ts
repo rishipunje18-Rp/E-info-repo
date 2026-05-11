@@ -3,6 +3,11 @@ import { createServer as createViteServer } from 'vite';
 import path from 'path';
 import Database from 'better-sqlite3';
 import { fileURLToPath } from 'url';
+import cors from 'cors';
+import morgan from 'morgan';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -64,35 +69,63 @@ async function startServer() {
   const app = express();
   const PORT = process.env.PORT || 3000;
 
+  // Logging and Security
+  app.use(morgan('combined')); // More detailed logging for production
+  app.use(cors({
+    origin: (origin, callback) => {
+      const allowedOrigins = [
+        'https://e-info-repo.onrender.com',
+        'http://localhost:3000',
+        'http://localhost:5173',
+        'https://ais-dev-xmmd2rii7qe7vx6bjqj4py-210872073666.asia-southeast1.run.app',
+        'https://ais-pre-xmmd2rii7qe7vx6bjqj4py-210872073666.asia-southeast1.run.app'
+      ];
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+  }));
+
   app.use(express.json({ limit: '50mb' }));
 
   // --- API Routes ---
 
   // Auth
   app.post('/api/auth/login', (req, res) => {
-    const { email, password } = req.body;
-    
-    // Admin check
-    if (email === 'admin@einfo.com' && password === 'admin123') {
-      const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
-      return res.json({ user });
-    }
+    try {
+      const { email, password } = req.body;
+      console.log(`Login attempt: ${email}`);
+      
+      // Admin check
+      if (email === 'admin@einfo.com' && password === 'admin123') {
+        const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+        return res.json({ user });
+      }
 
-    // Student check
-    if (password.length < 4) {
-      return res.status(400).json({ error: 'Password must be at least 4 characters' });
-    }
+      // Student check
+      if (password.length < 4) {
+        return res.status(400).json({ error: 'Password must be at least 4 characters' });
+      }
 
-    let user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
-    if (!user) {
-      // Auto-register student
-      const result = db.prepare('INSERT INTO users (email, password, role) VALUES (?, ?, ?)').run(email, password, 'student');
-      user = db.prepare('SELECT * FROM users WHERE id = ?').get(result.lastInsertRowid);
-    } else if (user.password !== password) {
-      return res.status(401).json({ error: 'Invalid credentials' });
-    }
+      let user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+      if (!user) {
+        // Auto-register student
+        const result = db.prepare('INSERT INTO users (email, password, role) VALUES (?, ?, ?)').run(email, password, 'student');
+        user = db.prepare('SELECT * FROM users WHERE id = ?').get(result.lastInsertRowid);
+      } else if (user.password !== password) {
+        return res.status(401).json({ error: 'Invalid credentials' });
+      }
 
-    res.json({ user });
+      res.json({ user });
+    } catch (error) {
+      console.error('Login Error:', error);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
   });
 
   // Events
@@ -195,14 +228,21 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    app.use(express.static(path.join(__dirname, 'dist')));
+    const distPath = path.join(process.cwd(), 'dist');
+    app.use(express.static(distPath));
     app.get('*', (req, res) => {
-      res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+      res.sendFile(path.join(distPath, 'index.html'));
     });
   }
 
+  // Global Error Handler
+  app.use((err: any, req: any, res: any, next: any) => {
+    console.error('Unhandled Error:', err);
+    res.status(500).json({ error: 'Internal Server Error', details: process.env.NODE_ENV === 'development' ? err.message : undefined });
+  });
+
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on http://0.0.0.0:${PORT}`);
   });
 }
 
