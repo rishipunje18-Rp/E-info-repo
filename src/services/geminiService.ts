@@ -29,25 +29,21 @@ export const generateEventDescription = async (event: {
 };
 
 export const generateEventPoster = async (event: { title: string; date: string; venue: string }) => {
-  const prompt = `Create an ultra-premium, high-end professional academic event poster for "${event.title}".
+  const prompt = `Create a masterpiece-level, high-fidelity professional academic event poster for "${event.title}".
   
-  CORE REQUIREMENTS:
-  - The design MUST be world-class, comparable to elite Ivy League or top-tier global university announcements.
-  - The typography MUST be sophisticated, using elegant sans-serif or refined serif fonts that look expensive and authoritative.
-  - The layout MUST be clean, balanced, and utilize purposeful white space (minimalist yet powerful).
+  CORE DESIGN GUIDELINES:
+  - THEME: Modern, Minimalist, and Scholarly. Think "Apple event meets Ivy League University".
+  - TYPOGRAPHY: Use bold, elegant, and sophisticated sans-serif fonts for the title. The text must be perfectly integrated into the design, not just floating on top.
+  - COMPOSITION: Masterful use of hierarchy. The Title "${event.title}" must be the hero.
+  - DETAILS: Include "${event.date}" and "${event.venue}" in a refined, legible section.
   
-  TEXT TO INCLUDE CLEARLY (Legible and well-integrated):
-  - Event Title: ${event.title}
-  - Scheduled Date: ${event.date}
-  - Official Venue: ${event.venue}
+  VISUAL ELEMENTS:
+  - COLOR PALETTE: Deep Obsidian and Teal gradients, or Sophisticated Slate with subtle Gold accents.
+  - BACKGROUND: Use high-level abstract geometry, subtle glassmorphism effects, or blurred architectural depth. No generic stock photos.
+  - MOOD: Technical, Innovative, and Elite.
+  - FINAL QUALITY: 8k Resolution, stunning clarity, studio-grade lighting.
   
-  VISUAL AESTHETIC:
-  - Palette: Executive deep navy, sophisticated charcoal, brushed gold accents, or clinical white/teal. No "clipart" colors.
-  - Background: Abstract high-tech patterns, architectural geometry, or subtle glassmorphism textures.
-  - Mood: Inspiring, intellectual, high-authority, and premium.
-  - Quality: Cinematic lighting, 8k resolution, razor-sharp edges.
-  
-  Do NOT include any generic "student" stock photos unless they look like high-art photography. Focus on the TITLE as a typographic masterpiece.`;
+  CRITICAL: The poster must look like a high-end physical print. Do NOT include any watermark or generic 'student' imagery.`;
 
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash-image',
